@@ -57,6 +57,11 @@ jobs:
     name: ${{ matrix.name }} (precision=${{ matrix.precision }})
     runs-on: ${{ matrix.os }}
 
+    # Forks can't use the vcpkg GHA binary cache (no ACTIONS_RUNTIME_TOKEN access).
+    # Force source builds of native deps so the workflow runs on a fork.
+    env:
+      VCPKG_BINARY_SOURCES: "clear"
+
     steps:
       - uses: actions/checkout@v4
         with:
