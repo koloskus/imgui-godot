@@ -35,8 +35,17 @@ ImGuiGD* gd = nullptr;
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-#else
-#include <dlfcn.h>
+#endif
+
+// On non-Windows, declare as a weak external. If a host (e.g. a C++ module
+// build of imgui-godot) provides the symbol, it gets used; otherwise it
+// resolves to nullptr and the if-check below skips. This avoids a runtime
+// dlsym lookup that can fatal under RTLD_NOW (which Godot's GDExtension
+// loader uses for fail-fast safety).
+
+#ifndef _WIN32
+extern "C" __attribute__((weak))
+void imgui_godot_module_init(uint32_t, ImGuiContext*, ImGuiMemAllocFunc, ImGuiMemFreeFunc);
 #endif
 
 void sync_modules()
@@ -45,7 +54,7 @@ void sync_modules()
 #ifdef _WIN32
     pmodinit mod_init = (pmodinit)GetProcAddress(GetModuleHandle(nullptr), "imgui_godot_module_init");
 #else
-    pmodinit mod_init = (pmodinit)dlsym(dlopen(nullptr, RTLD_LAZY), "imgui_godot_module_init");
+    pmodinit mod_init = imgui_godot_module_init;
 #endif
     if (mod_init)
     {
